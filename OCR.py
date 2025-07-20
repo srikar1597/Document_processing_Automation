@@ -2,7 +2,6 @@ import streamlit as st
 from together import Together
 import base64
 import os
-import imghdr
 from pdf2image import convert_from_bytes
 import pandas as pd
 from PIL import Image
@@ -26,17 +25,19 @@ class FileProcessor:
         self.model = "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo"
 
     def get_mime_type(self, image_path):
-        img_type = imghdr.what(image_path)
-        if img_type:
-            return f'image/{img_type}'
-        ext = os.path.splitext(image_path)[1].lower()
-        return {
-            '.png': 'image/png',
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.gif': 'image/gif',
-            '.webp': 'image/webp'
-        }.get(ext, 'image/jpeg')
+        try:
+            with Image.open(image_path) as img:
+                img_format = img.format.lower()  # 'jpeg', 'png', etc.
+                return f'image/{img_format}'
+        except Exception:
+            ext = os.path.splitext(image_path)[1].lower()
+            return {
+                '.png': 'image/png',
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.gif': 'image/gif',
+                '.webp': 'image/webp'
+            }.get(ext, 'image/jpeg')
 
     def encode_image(self, image_path):
         with open(image_path, "rb") as f:
@@ -70,7 +71,7 @@ class FileProcessor:
         return response_text 
 
 # UI
-st.title("Document Processing Automation:NLP and OCR to extract data from invoices, contract")
+st.title("Document Processing Automation: NLP and OCR to extract data from invoices, contracts")
 
 uploaded_file = st.file_uploader("Upload Image / PDF / Excel", type=["png", "jpg", "jpeg", "gif", "webp", "pdf", "xlsx", "xls"])
 
@@ -81,7 +82,7 @@ if api_key and uploaded_file:
 
             suffix = os.path.splitext(uploaded_file.name)[1].lower()
 
-            # Save temp file
+            # Save uploaded file to temporary path
             with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
                 tmp.write(uploaded_file.read())
                 temp_path = tmp.name
