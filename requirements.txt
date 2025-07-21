@@ -2,3 +2,4 @@ streamlit
 together
 Pillow
 pdf2image
+openpyxl
